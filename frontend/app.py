@@ -81,13 +81,14 @@ def terminal():
         # Ajouter la commande + sortie à l'historique
         session["history"].append(f"$ {cmd}\n{result}")
 
-        # garder uniquement les 20 dernières lignes
+        # garder uniquement les 15 dernières lignes
         session["history"] = session["history"][-15:]
 
     # concaténer toutes les sorties pour affichage
     output = "\n".join(session["history"])
 
     return render_template("terminal.html", output=output, title="Terminal")
+
 @app.route("/logout")
 def logout():
     session.clear()
