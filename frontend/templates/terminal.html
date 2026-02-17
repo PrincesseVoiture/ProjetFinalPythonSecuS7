@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="box">
-    <h2>Terminal pédagogique</h2>
+    <h2>Terminal badass</h2>
 
-    <form method="POST">
+    <form method="POST" id="terminal-form">
         <input type="text" name="command" placeholder="Commande (ex: ls)" required>
         <button type="submit">Envoyer</button>
     </form>
@@ -11,4 +11,23 @@
     <h3>Résultat :</h3>
     <pre>{{ output }}</pre>
 </div>
+
+<script>
+const input = document.querySelector('input[name="command"]');
+input.focus(); 
+
+// soumission avec Enter
+input.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('terminal-form').submit();
+    }
+});
+
+// focus automatique après soumission
+const form = document.getElementById('terminal-form');
+form.addEventListener('submit', () => {
+    setTimeout(() => input.focus(), 100);
+});
+</script>
 {% endblock %}

@@ -9,6 +9,8 @@ body {
     background-position: center;
     background-repeat: no-repeat;
     color: white;
+    background-color: black;
+    background-repeat: no-repeat;
 }
 
 /* Conteneur principal */

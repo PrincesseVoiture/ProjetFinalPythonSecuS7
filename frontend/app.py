@@ -64,21 +64,30 @@ def terminal():
     if "user" not in session:
         return redirect("/login")
 
-    output = "Bienvenue sur votre terminal Flask, Monsieur"
+    if "history" not in session:
+        session["history"] = ["Bienvenue dans votre terminal Flask."]
 
     if request.method == "POST":
         cmd = request.form["command"]
 
-        # Simulation de l'API
+        # simulation de l'API
         if cmd == "ls":
-            output = "file1.txt\nfile2.txt\nscript.py"
+            result = "file1.txt\nfile2.txt\nscript.py"
         elif cmd == "whoami":
-            output = "admin"
+            result = session["user"]
         else:
-            output = f"Commande simulée : {cmd}"
+            result = f"Commande simulée : {cmd}"
+
+        # Ajouter la commande + sortie à l'historique
+        session["history"].append(f"$ {cmd}\n{result}")
+
+        # garder uniquement les 20 dernières lignes
+        session["history"] = session["history"][-15:]
+
+    # concaténer toutes les sorties pour affichage
+    output = "\n".join(session["history"])
 
     return render_template("terminal.html", output=output, title="Terminal")
-
 @app.route("/logout")
 def logout():
     session.clear()
