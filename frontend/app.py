@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, session
 import requests
 
-API_URL= "127.0.0.1:8000"
+API_URL= "http://127.0.0.1:5000"
 
 app = Flask(__name__)
 app.secret_key = "IPSSI C COOL" 
@@ -10,43 +10,42 @@ app.secret_key = "IPSSI C COOL"
 def home():
     return redirect("/login")
 
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-
-        if username == "admin" and password == "admin":
-            session["user"] = username
-            return redirect("/dashboard")
-        elif username == "Berzylyss" and password == "123456":
-            session["user"] = username
-            return redirect("/dashboard")        
-
-    return render_template("login.html", title="Connexion")
-
 # @app.route("/login", methods=["GET", "POST"])
 # def login():
 #     if request.method == "POST":
 #         username = request.form["username"]
 #         password = request.form["password"]
 
-#         # appel API pour authentification
-#         try:
-#             response = requests.post(f"{API_URL}/auth/login",
-#                                      json={"username": username, "password": password})
-#             if response.status_code == 200:
-#                 token = response.json().get("token")
-#                 session["user"] = username
-#                 session["token"] = token  # stocke le token pour les futurs appels API
-#                 return redirect("/dashboard")
-#             else:
-#                 error = "Login incorrect"
-#         except:
-#             error = "Impossible de joindre l'API"
-#         return render_template("login.html", error=error)
+#         if username == "admin" and password == "admin":
+#             session["user"] = username
+#             return redirect("/dashboard")
+#         elif username == "Berzylyss" and password == "123456":
+#             session["user"] = username
+#             return redirect("/dashboard")        
 
-#     return render_template("login.html")
+#     return render_template("login.html", title="Connexion")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        # appel API pour authentification
+        try:
+            response = requests.post(f"{API_URL}/auth/login",
+                                     json={"username": username, "password": password})
+            if response.status_code == 200:
+                session["user"] = username
+                session["token"] = response.json().get("token")
+                return redirect("/dashboard")
+            else:
+                error = "Login incorrect"
+        except:
+            error = "Impossible de joindre l'API"
+        return render_template("login.html", error=error)
+
+    return render_template("login.html")
 
 @app.route("/dashboard")
 def dashboard():
@@ -93,4 +92,4 @@ def logout():
     return redirect("/login")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(port=5001, debug=True)
