@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="box">
+    <h2>Terminal pédagogique</h2>
 
-<h2>Terminal pédagogique</h2>
+    <form method="POST">
+        <input type="text" name="command" placeholder="Commande (ex: ls)" required>
+        <button type="submit">Envoyer</button>
+    </form>
 
-<form method="POST">
-    <input type="text" name="command" placeholder="Commande (ex: ls)" required>
-    <button type="submit">Envoyer</button>
-</form>
-
-<h3>Résultat :</h3>
-<pre>{{ output }}</pre>
-
+    <h3>Résultat :</h3>
+    <pre>{{ output }}</pre>
+</div>
 {% endblock %}

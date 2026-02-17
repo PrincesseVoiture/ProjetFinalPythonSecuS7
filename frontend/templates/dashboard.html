@@ -1,20 +1,22 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="box">
+    <h2>Tableau de bord des agents</h2>
 
-<h2>Agents connectés</h2>
+    {% if agents %}
+        <ul>
+            {% for agent in agents %}
+                <li>
+                    <b>{{ agent.hostname }}</b> —
+                    CPU: {{ agent.cpu }}% —
+                    RAM: {{ agent.ram }}%
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Aucun agent connecté.</p>
+    {% endif %}
 
-{% if agents %}
-    <ul>
-        {% for agent in agents %}
-            <li>
-                <b>{{ agent.hostname }}</b> —
-                CPU: {{ agent.cpu }}% —
-                RAM: {{ agent.ram }}%
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>Aucun agent connecté.</p>
-{% endif %}
-
+    <a href="/terminal"><button>Accéder au terminal</button></a>
+</div>
 {% endblock %}

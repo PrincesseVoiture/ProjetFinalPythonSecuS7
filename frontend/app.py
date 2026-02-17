@@ -1,11 +1,11 @@
-from flask import Flask, render_template, request, redirect, session, url_for
-import requests
+from flask import Flask, render_template, request, redirect, session
 
 app = Flask(__name__)
 app.secret_key = "super-secret-key"  # pour les sessions
 
-API_URL = "http://127.0.0.1:8000"  # ton backend API
-
+@app.route("/")
+def home():
+    return redirect("/login")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -16,21 +16,25 @@ def login():
         if username == "admin" and password == "admin":
             session["user"] = username
             return redirect("/dashboard")
+        elif username == "Berzylyss" and password == "123456":
+            session["user"] = username
+            return redirect("/dashboard")        
 
-    return render_template("login.html")
+    return render_template("login.html", title="Connexion")
 
 @app.route("/dashboard")
 def dashboard():
     if "user" not in session:
         return redirect("/login")
 
-    try:
-        response = requests.get(f"{API_URL}/agents")
-        agents = response.json()
-    except:
-        agents = []
+    # Données simulées
+    agents = [
+        {"hostname": "PC1", "cpu": 23, "ram": 45},
+        {"hostname": "PC2", "cpu": 12, "ram": 30},
+        {"hostname": "PC3", "cpu": 67, "ram": 78}
+    ]
 
-    return render_template("dashboard.html", agents=agents)
+    return render_template("dashboard.html", agents=agents, title="Dashboard")
 
 @app.route("/terminal", methods=["GET", "POST"])
 def terminal():
@@ -42,23 +46,20 @@ def terminal():
     if request.method == "POST":
         cmd = request.form["command"]
 
-        # envoyer commande à l’API
-        try:
-            response = requests.post(
-                f"{API_URL}/command",
-                json={"command": cmd}
-            )
-            output = response.json().get("output", "")
-        except:
-            output = "Erreur API"
+        # Simulation de l'API
+        if cmd == "ls":
+            output = "file1.txt\nfile2.txt\nscript.py"
+        elif cmd == "whoami":
+            output = "admin"
+        else:
+            output = f"Commande simulée : {cmd}"
 
-    return render_template("terminal.html", output=output)
+    return render_template("terminal.html", output=output, title="Terminal")
 
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/login")
-
 
 if __name__ == "__main__":
     app.run(debug=True)
