@@ -1,4 +1,7 @@
 from flask import Flask, render_template, request, redirect, session
+import requests
+
+API_URL= "127.0.0.1:8000"
 
 app = Flask(__name__)
 app.secret_key = "IPSSI C COOL" 
@@ -47,21 +50,21 @@ def login():
 
 @app.route("/dashboard")
 def dashboard():
-    if "user" not in session:
+    if "user" not in session or "token" not in session:
         return redirect("/login")
 
-    # Données simulées
-    agents = [
-        {"hostname": "PC1", "cpu": 23, "ram": 45},
-        {"hostname": "PC2", "cpu": 12, "ram": 30},
-        {"hostname": "PC3", "cpu": 67, "ram": 78}
-    ]
+    try:
+        headers = {"Authorization": f"Bearer {session['token']}"}
+        res = requests.get(f"{API_URL}/agents", headers=headers)
+        agents = res.json()
+    except:
+        agents = []
 
     return render_template("dashboard.html", agents=agents, title="Dashboard")
 
 @app.route("/terminal", methods=["GET", "POST"])
 def terminal():
-    if "user" not in session:
+    if "user" not in session or "token" not in session:
         return redirect("/login")
 
     if "history" not in session:
@@ -69,24 +72,19 @@ def terminal():
 
     if request.method == "POST":
         cmd = request.form["command"]
-
-        # simulation de l'API
-        if cmd == "ls":
-            result = "file1.txt\nfile2.txt\nscript.py"
-        elif cmd == "whoami":
-            result = session["user"]
-        else:
-            result = f"Commande simulée : {cmd}"
+        try:
+            headers = {"Authorization": f"Bearer {session['token']}"}
+            res = requests.post(f"{API_URL}/command/pc-01?cmd={cmd}", headers=headers)
+            data = res.json()
+            result = data.get("message", "Erreur API")
+        except:
+            result = "Impossible de joindre l'API"
 
         # Ajouter la commande + sortie à l'historique
         session["history"].append(f"$ {cmd}\n{result}")
-
-        # garder uniquement les 15 dernières lignes
         session["history"] = session["history"][-15:]
 
-    # concaténer toutes les sorties pour affichage
     output = "\n".join(session["history"])
-
     return render_template("terminal.html", output=output, title="Terminal")
 
 @app.route("/logout")
