@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, session
 
 app = Flask(__name__)
-app.secret_key = "super-secret-key"  # pour les sessions
+app.secret_key = "IPSSI C COOL" 
 
 @app.route("/")
 def home():
@@ -22,6 +22,29 @@ def login():
 
     return render_template("login.html", title="Connexion")
 
+# @app.route("/login", methods=["GET", "POST"])
+# def login():
+#     if request.method == "POST":
+#         username = request.form["username"]
+#         password = request.form["password"]
+
+#         # appel API pour authentification
+#         try:
+#             response = requests.post(f"{API_URL}/auth/login",
+#                                      json={"username": username, "password": password})
+#             if response.status_code == 200:
+#                 token = response.json().get("token")
+#                 session["user"] = username
+#                 session["token"] = token  # stocke le token pour les futurs appels API
+#                 return redirect("/dashboard")
+#             else:
+#                 error = "Login incorrect"
+#         except:
+#             error = "Impossible de joindre l'API"
+#         return render_template("login.html", error=error)
+
+#     return render_template("login.html")
+
 @app.route("/dashboard")
 def dashboard():
     if "user" not in session:
@@ -41,7 +64,7 @@ def terminal():
     if "user" not in session:
         return redirect("/login")
 
-    output = ""
+    output = "Bienvenue sur votre terminal Flask, Monsieur"
 
     if request.method == "POST":
         cmd = request.form["command"]
