@@ -1,4 +1,3 @@
-# main.py
 from fastapi import FastAPI, Header, HTTPException, Depends
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
