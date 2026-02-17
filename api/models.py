@@ -1,21 +1,45 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
-from sqlalchemy.ext.declarative import declarative_base
-import datetime
+import sqlite3
 
-Base = declarative_base()
+DB_FILE = "database.db"
 
-class Agent(Base):
-    __tablename__ = "agents"
-    id = Column(String, primary_key=True)
-    last_seen = Column(DateTime, default=datetime.datetime.utcnow)
-    cpu = Column(Float)
-    ram = Column(Float)
-    status = Column(String, default="offline")
+def init_db():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
 
-class Command(Base):
-    __tablename__ = "commands"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    agent_id = Column(String)
-    command = Column(String)
-    status = Column(String, default="pending")  # pending / done
-    result = Column(String, nullable=True)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS agents (
+        id TEXT PRIMARY KEY,
+        cpu REAL,
+        ram REAL,
+        last_seen TEXT,
+        status TEXT
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS commands (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        agent_id TEXT,
+        command TEXT,
+        status TEXT DEFAULT 'pending',
+        result TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+def run_query(query, params=(), fetch=False):
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute(query, params)
+    if fetch:
+        result = cursor.fetchall()
+    else:
+        result = None
+    conn.commit()
+    conn.close()
+    return result
+
+init_db()

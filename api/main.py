@@ -1,77 +1,78 @@
-from fastapi import FastAPI, Header, HTTPException, Depends
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from models import Base, Agent
-from schemas import AgentData
+from fastapi import FastAPI, Header, HTTPException, Body
+from models import run_query
 import datetime
-from fastapi import Body
-
-engine = create_engine("sqlite:///database.db", connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(bind=engine)
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 AGENT_TOKEN = "secret123"
 
-def auth_header(authorization: str = Header(...)):
+def verify_token(authorization: str = Header(...)):
     if not authorization or authorization.split(" ")[1] != AGENT_TOKEN:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @app.post("/agent/data")
-def update_agent_status(agent_data: AgentData, db=Depends(get_db), auth=Depends(auth_header)):
-    agent = db.query(Agent).filter(Agent.id == agent_data.agent_id).first()
-    if agent:
-        agent.cpu = agent_data.cpu
-        agent.ram = agent_data.ram
-        agent.last_seen = datetime.datetime.utcnow()
-        agent.status = "online"
-    else:
-        agent = Agent(
-            id=agent_data.agent_id,
-            cpu=agent_data.cpu,
-            ram=agent_data.ram,
-            status="online"
+def update_agent_status(
+    agent_id: str = Body(...),
+    cpu: float = Body(...),
+    ram: float = Body(...),
+    authorization: str = Header(...)
+):
+    verify_token(authorization)
+    now = datetime.datetime.utcnow().isoformat()
+
+    existing = run_query("SELECT * FROM agents WHERE id = ?", (agent_id,), fetch=True)
+    if existing:
+        run_query(
+            "UPDATE agents SET cpu = ?, ram = ?, last_seen = ?, status = 'online' WHERE id = ?",
+            (cpu, ram, now, agent_id)
         )
-        db.add(agent)
-    db.commit()
+    else:
+        run_query(
+            "INSERT INTO agents (id, cpu, ram, last_seen, status) VALUES (?, ?, ?, ?, 'online')",
+            (agent_id, cpu, ram, now)
+        )
+
     return {"status": "OK"}
 
 @app.get("/agents")
-def list_agents(db=Depends(get_db), auth=Depends(auth_header)):
-    agents = db.query(Agent).all()
-    return [{"hostname": a.id, "cpu": a.cpu, "ram": a.ram} for a in agents]
+def list_agents(authorization: str = Header(...)):
+    verify_token(authorization)
+    rows = run_query("SELECT * FROM agents", fetch=True)
+    return [{"hostname": r["id"], "cpu": r["cpu"], "ram": r["ram"]} for r in rows]
 
 
 @app.post("/agent/command")
-def add_command(agent_id: str = Body(...), command: str = Body(...), db=Depends(get_db), auth=Depends(auth_header)):
-    from models import Command
-    cmd = Command(agent_id=agent_id, command=command)
-    db.add(cmd)
-    db.commit()
-    return {"status": "command added", "id": cmd.id}
+def add_command(
+    agent_id: str = Body(...),
+    command: str = Body(...),
+    authorization: str = Header(...)
+):
+    verify_token(authorization)
+    run_query("INSERT INTO commands (agent_id, command) VALUES (?, ?)", (agent_id, command))
+    cmd_id = run_query("SELECT last_insert_rowid() AS id", fetch=True)[0]["id"]
+    return {"status": "command added", "id": cmd_id}
 
 @app.get("/agent/command/{agent_id}")
-def get_command(agent_id: str, db=Depends(get_db), auth=Depends(auth_header)):
-    from models import Command
-    cmd = db.query(Command).filter(Command.agent_id == agent_id, Command.status == "pending").first()
-    if cmd:
-        return {"command": cmd.command, "id": cmd.id}
+def get_command(agent_id: str, authorization: str = Header(...)):
+    verify_token(authorization)
+    rows = run_query(
+        "SELECT * FROM commands WHERE agent_id = ? AND status = 'pending' ORDER BY id LIMIT 1",
+        (agent_id,), fetch=True
+    )
+    if rows:
+        row = rows[0]
+        return {"command": row["command"], "id": row["id"]}
     return {"command": None, "id": None}
 
 @app.post("/agent/result")
-def submit_command_result(command_id: int = Body(...), output: str = Body(...), db=Depends(get_db), auth=Depends(auth_header)):
-    from models import Command
-    cmd = db.query(Command).filter(Command.id == command_id).first()
-    if not cmd:
-        return {"status": "command not found"}
-    cmd.result = output
-    cmd.status = "done"
-    db.commit()
+def submit_command_result(
+    command_id: int = Body(...),
+    output: str = Body(...),
+    authorization: str = Header(...)
+):
+    verify_token(authorization)
+    run_query(
+        "UPDATE commands SET result = ?, status = 'done' WHERE id = ?",
+        (output, command_id)
+    )
     return {"status": "result saved"}
