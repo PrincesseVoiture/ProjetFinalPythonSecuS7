@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
-from models import run_query
+from models import Database
 import datetime
 
 app = Flask(__name__)
 AGENT_TOKEN = "secret123"
+
+db = Database()
 
 def verify_token():
     auth_header = request.headers.get("Authorization")
@@ -21,17 +23,17 @@ def update_agent_status():
     cpu = data.get("cpu")
     ram = data.get("ram")
 
-    now = datetime.datetime.utcnow().isoformat()
+    now = datetime.datetime.now(datetime.timezone.utc)
 
-    existing = run_query("SELECT * FROM agents WHERE id = ?", (agent_id,), fetch=True)
+    existing = db.run_query("SELECT * FROM agents WHERE id = ?", (agent_id,), fetch=True)
 
     if existing:
-        run_query(
+        db.run_query(
             "UPDATE agents SET cpu = ?, ram = ?, last_seen = ?, status = 'online' WHERE id = ?",
             (cpu, ram, now, agent_id)
         )
     else:
-        run_query(
+        db.run_query(
             "INSERT INTO agents (id, cpu, ram, last_seen, status) VALUES (?, ?, ?, ?, 'online')",
             (agent_id, cpu, ram, now)
         )
@@ -44,7 +46,7 @@ def list_agents():
     if not verify_token():
         return jsonify({"error": "Unauthorized"}), 401
 
-    rows = run_query("SELECT * FROM agents", fetch=True)
+    rows = db.run_query("SELECT * FROM agents", fetch=True)
     agents = [{"hostname": r["id"], "cpu": r["cpu"], "ram": r["ram"]} for r in rows]
 
     return jsonify(agents)
@@ -58,8 +60,8 @@ def add_command():
     agent_id = data.get("agent_id")
     command = data.get("command")
 
-    run_query("INSERT INTO commands (agent_id, command) VALUES (?, ?)", (agent_id, command))
-    cmd_id = run_query("SELECT last_insert_rowid() AS id", fetch=True)[0]["id"]
+    db.run_query("INSERT INTO commands (agent_id, command) VALUES (?, ?)", (agent_id, command))
+    cmd_id = db.run_query("SELECT last_insert_rowid() AS id", fetch=True)[0]["id"]
 
     return jsonify({"status": "command added", "id": cmd_id})
 
@@ -69,7 +71,7 @@ def get_command(agent_id):
     if not verify_token():
         return jsonify({"error": "Unauthorized"}), 401
 
-    rows = run_query(
+    rows = db.run_query(
         "SELECT * FROM commands WHERE agent_id = ? AND status = 'pending' ORDER BY id LIMIT 1",
         (agent_id,), fetch=True
     )
@@ -90,7 +92,7 @@ def submit_command_result():
     command_id = data.get("command_id")
     output = data.get("output")
 
-    run_query(
+    db.run_query(
         "UPDATE commands SET result = ?, status = 'done' WHERE id = ?",
         (output, command_id)
     )
