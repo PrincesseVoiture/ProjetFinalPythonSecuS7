@@ -5,7 +5,7 @@ API_IP = "127.0.0.1"
 API_PORT = "5000"
 API_URL = f"http://{API_IP}:{API_PORT}"
 TOKEN = "secret123"
-AGENT_ID = "007"
+AGENT_ID = "agent1"
 
 HEADERS = {
     "Authorization": f"Bearer {TOKEN}"
@@ -50,5 +50,5 @@ while True:
     except requests.exceptions.ConnectionError as e:
         print("API unreacheabble")
 
-    time.sleep(0.5)
+    time.sleep(2)
 
