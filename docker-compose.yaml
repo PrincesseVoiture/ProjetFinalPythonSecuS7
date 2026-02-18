@@ -1,0 +1,20 @@
+---
+services:
+  api:
+    build: ./api
+    container_name: api_server
+    ports:
+      - 5000:5000
+    volumes:
+      - ./api/database.db:/app/database.db
+    restart: unless-stopped
+  frontend:
+    build: ./frontend
+    container_name: front_server
+    ports:
+      - 5001:5001
+    depends_on:
+      - api
+    environment:
+      - API_URL=http://api_server:5000
+    restart: unless-stopped
