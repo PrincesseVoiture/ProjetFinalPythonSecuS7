@@ -123,7 +123,7 @@ def submit_command_result():
 
     data = request.json
     command_id = data.get("command_id")
-    output = data.get("output")
+    output = data.get("stdout")
 
     db.run_query(
         "UPDATE commands SET result = ?, status = 'done' WHERE agent_id = ?",

