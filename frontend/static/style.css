@@ -109,8 +109,10 @@ table tr:nth-child(even) {
 .terminal-output {
     background: #111;
     color: #0f0;
-    padding: 10px;
+    padding: 10px;         
     border-radius: 5px;
-    white-space: pre-wrap;
+    white-space: pre-wrap;  
     font-family: monospace;
+    text-align: left;       
+    margin: 0;              
 }
