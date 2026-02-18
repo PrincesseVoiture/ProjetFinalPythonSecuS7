@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from models import Database
 import datetime
 from flask_cors import CORS
+import sqlite3
 
 app = Flask(__name__)
 
@@ -39,7 +40,6 @@ def login():
         return jsonify({"error": "Invalid credentials"}), 401
 
     token = user[0]["token"]
-    # TODO add token in database
     return jsonify({"token": token})
 
 
@@ -85,22 +85,25 @@ def list_agents():
 
 @app.route("/agent/command", methods=["POST"])
 def add_command():
-    # TODO uncomment when verify_agent_token() will be fixed
-    #if not verify_agent_token():
-    #    return jsonify({"error": "Unauthorized"}), 401
-
     data = request.json
     agent_id = data.get("agent_id")
     command = data.get("command")
-    
-    db.run_query("INSERT INTO commands (agent_id, command) VALUES (?, ?)", (agent_id, command,), fetch=True)
-    cmd_id = db.run_query("SELECT id FROM commands WHERE agent_id = ? ORDER BY id DESC LIMIT 1", (agent_id,), fetch=True)[0]["id"]
+
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO commands (agent_id, command) VALUES (?, ?)", (agent_id, command))
+    cmd_id = cursor.lastrowid  
+    conn.commit()
+    conn.close()
+    print(f"idddddddd: {cmd_id}")
 
     return jsonify({"status": "command added", "id": cmd_id})
 
 
 @app.route("/fromagent/getcommand/<agent_id>", methods=["GET"])
 def get_command(agent_id: str):
+    auth_header = request.headers.get("Authorization")
+    print(f"DEBUGUUGUG GET /fromagent/getcommand/{agent_id} - Authorization header: {auth_header}")
     if not verify_agent_token():
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -115,7 +118,7 @@ def get_command(agent_id: str):
 
     return jsonify({"command": None, "id": None})
 
-
+#changement
 @app.route("/fromagent/result", methods=["POST"])
 def submit_command_result():
     if not verify_agent_token():
@@ -123,16 +126,31 @@ def submit_command_result():
 
     data = request.json
     command_id = data.get("command_id")
-    output = data.get("output")
+    output = data.get("output")  
 
+    print("COMMAND ID:", command_id)
+    print("OUTPUT:", output)
     db.run_query(
-        "UPDATE commands SET result = ?, status = 'done' WHERE agent_id = ?",
-        (output, command_id)
+        "UPDATE commands SET result = ?, status = 'done' WHERE id = ?",
+        (output["stdout"], command_id)
     )
 
     return jsonify({"status": "result saved"})
 
-# TODO add a function to send command result from command id if GET received
+
+
+@app.route("/agent/result/<int:command_id>", methods=["GET"])
+def get_result(command_id):
+    rows = db.run_query(
+        "SELECT result FROM commands WHERE id = ?",
+        (command_id,),
+        fetch=True
+    )
+    if rows and rows[0]["result"] is not None:
+        return jsonify({"result": rows[0]["result"]})
+    return jsonify({"result": "Aucun résultat disponible"})
+
+
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)

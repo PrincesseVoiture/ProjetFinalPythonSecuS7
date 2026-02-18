@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, session
 import requests
+import time
 
 API_URL= "http://127.0.0.1:5000"
 
@@ -10,28 +11,12 @@ app.secret_key = "IPSSI C COOL"
 def home():
     return redirect("/login")
 
-# @app.route("/login", methods=["GET", "POST"])
-# def login():
-#     if request.method == "POST":
-#         username = request.form["username"]
-#         password = request.form["password"]
-
-#         if username == "admin" and password == "admin":
-#             session["user"] = username
-#             return redirect("/dashboard")
-#         elif username == "Berzylyss" and password == "123456":
-#             session["user"] = username
-#             return redirect("/dashboard")        
-
-#     return render_template("login.html", title="Connexion")
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
 
-        # appel API pour authentification
         try:
             response = requests.post(f"{API_URL}/auth/login",
                                      json={"username": username, "password": password})
@@ -56,35 +41,72 @@ def dashboard():
         headers = {"Authorization": f"Bearer {session['token']}"}
         res = requests.get(f"{API_URL}/agents", headers=headers)
         agents = res.json()
-    except:
+    except Exception as e:
+        print(e)
         agents = []
 
     return render_template("dashboard.html", agents=agents, title="Dashboard")
+
 
 @app.route("/terminal", methods=["GET", "POST"])
 def terminal():
     if "user" not in session or "token" not in session:
         return redirect("/login")
 
+    headers = {"Authorization": f"Bearer {session['token']}"}
+
+    try:
+        agents = requests.get(f"{API_URL}/agents", headers=headers).json()
+    except:
+        agents = []
+
     if "history" not in session:
-        session["history"] = ["Bienvenue dans votre terminal Flask."]
+        session["history"] = []
+
+    selected_agent_id = agents[0]["hostname"] if agents else None
 
     if request.method == "POST":
         cmd = request.form["command"]
-        try:
-            headers = {"Authorization": f"Bearer {session['token']}"}
-            res = requests.post(f"{API_URL}/agent/command", headers=headers, json={"agent_id": "007", "command" : cmd}) # TODO replace hardcoded 007 with the right computer's name
-            data = res.json()
-            result = data.get("message", "Erreur API")
-        except:
-            result = "Impossible de joindre l'API"
+        selected_agent_id = request.form.get("agent_id", selected_agent_id)
 
-        # Ajouter la commande + sortie à l'historique
-        session["history"].append(f"$ {cmd}\n{result}")
-        session["history"] = session["history"][-15:]
+        if not selected_agent_id:
+            session["history"].append("Aucun agent disponible")
+        else:
+            try:
+                res = requests.post(
+                    f"{API_URL}/agent/command",
+                    headers=headers,
+                    json={"agent_id": selected_agent_id, "command": cmd}
+                ).json()
 
-    output = "\n".join(session["history"])
-    return render_template("terminal.html", output=output, title="Terminal")
+                cmd_id = res.get("id")
+                result = "En attente..."
+
+                for _ in range(5):
+                    time.sleep(1)
+                    r = requests.get(
+                        f"{API_URL}/agent/result/{cmd_id}",
+                        headers=headers
+                    ).json()
+
+                    if r.get("result") and r["result"] != "Aucun résultat disponible":
+                        result = r["result"]
+                        break
+
+                session["history"].append(f"[{selected_agent_id}] $ {cmd}\n{result}")
+
+            except:
+                session["history"].append(f"[{selected_agent_id}] $ {cmd}\nErreur API")
+
+        session["history"] = session["history"][-20:]
+
+    return render_template(
+        "terminal.html",
+        output="\n".join(session["history"]),
+        agents=agents,
+        selected_agent_id=selected_agent_id,
+        title="Terminal"
+    )
 
 @app.route("/logout")
 def logout():
