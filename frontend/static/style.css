@@ -105,3 +105,12 @@ table th {
 table tr:nth-child(even) {
     background: rgba(255, 255, 255, 0.1)
 }
+
+.terminal-output {
+    background: #111;
+    color: #0f0;
+    padding: 10px;
+    border-radius: 5px;
+    white-space: pre-wrap;
+    font-family: monospace;
+}
