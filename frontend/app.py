@@ -82,7 +82,7 @@ def terminal():
                 result = f"Commande envoyée à {selected_agent_id} (id: {command_id})"
                 print(result)
 
-                for _ in range(5):
+                for _ in range(10):
                     res = requests.get(f"{API_URL}/agent/result", json={"command_id": command_id}).json()
                     result = res["result"]
 
@@ -91,7 +91,7 @@ def terminal():
                     #if result != "Aucun résultat disponible":
                     #    break
 
-                    time.sleep(0.5)
+                    time.sleep(0.2)
 
             except:
                 result = f"Impossible de joindre l'API pour {selected_agent_id}"

@@ -44,7 +44,7 @@ while True:
                 json={"command_id": response["id"], "output": {"stdout": stdout, "returncode": returncode}}
             )
 
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.ConnectionError or requests.exceptions.JSONDecodeError:
         print("API unreachable")
 
     time.sleep(2)

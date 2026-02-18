@@ -123,11 +123,11 @@ def submit_command_result():
 
     data = request.json
     command_id = data.get("command_id")
-    output = data.get("stdout")
+    output = data.get("output")
 
     db.run_query(
-        "UPDATE commands SET result = ?, status = 'done' WHERE agent_id = ?",
-        (output, command_id,)
+        "UPDATE commands SET result = ?, status = 'done' WHERE id = ?",
+        (output["stdout"], command_id,)
     )
 
     return jsonify({"status": "result saved"})
@@ -137,7 +137,6 @@ def get_result():
 
     command_id = request.json["command_id"]
 
-    # ICI PROBLEME
     rows = db.run_query(
         "SELECT * FROM commands WHERE id = ?",
         (command_id,),
@@ -148,6 +147,7 @@ def get_result():
 
     if rows and rows[0]["result"] is not None:
         return jsonify({"result": rows[0]["result"]})
+
     return jsonify({"result": "Aucun résultat disponible"})
 
 
