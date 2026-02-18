@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    {% if session.get('user') %}
+    <nav class="navbar">
+        <span>Connecté en tant que {{ session.get('user') }}</span>
+        <a class="nav-button" href="/dashboard">Dashboard</a>
+        <a class="nav-button" href="/terminal">Terminal</a>
+        <a class="nav-button" href="/logout">Logout</a>
+    </nav>
+    {% endif %}
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
