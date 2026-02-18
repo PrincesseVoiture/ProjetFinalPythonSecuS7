@@ -127,12 +127,30 @@ def submit_command_result():
 
     db.run_query(
         "UPDATE commands SET result = ?, status = 'done' WHERE agent_id = ?",
-        (output, command_id)
+        (output, command_id,)
     )
 
     return jsonify({"status": "result saved"})
 
 # TODO add a function to send command result from command id if GET received
+
+@app.route("/agent/result", methods=["GET"])
+def get_result():
+
+    command_id = request.json["command_id"]
+
+    rows = db.run_query(
+        "SELECT * FROM commands WHERE id = ?",
+        (command_id,),
+        fetch=True
+    )
+
+    print(f"{"true\n"*10}commandid is {command_id}, row: {rows[0]["result"]}")
+
+    if rows and rows[0]["result"] is not None:
+        return jsonify({"result": rows[0]["result"]})
+    return jsonify({"result": "Aucun résultat disponible"})
+
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)
