@@ -10,21 +10,6 @@ app.secret_key = "IPSSI C COOL"
 def home():
     return redirect("/login")
 
-# @app.route("/login", methods=["GET", "POST"])
-# def login():
-#     if request.method == "POST":
-#         username = request.form["username"]
-#         password = request.form["password"]
-
-#         if username == "admin" and password == "admin":
-#             session["user"] = username
-#             return redirect("/dashboard")
-#         elif username == "Berzylyss" and password == "123456":
-#             session["user"] = username
-#             return redirect("/dashboard")        
-
-#     return render_template("login.html", title="Connexion")
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -56,10 +41,13 @@ def dashboard():
         headers = {"Authorization": f"Bearer {session['token']}"}
         res = requests.get(f"{API_URL}/agents", headers=headers)
         agents = res.json()
-    except:
+        print(agents)  
+    except Exception as e:
+        print(e)
         agents = []
 
     return render_template("dashboard.html", agents=agents, title="Dashboard")
+
 
 @app.route("/terminal", methods=["GET", "POST"])
 def terminal():
@@ -73,7 +61,7 @@ def terminal():
         cmd = request.form["command"]
         try:
             headers = {"Authorization": f"Bearer {session['token']}"}
-            res = requests.post(f"{API_URL}/agent/command", headers=headers, json={"agent_id": "007", "command" : cmd}) # TODO replace hardcoded 007 with the right computer's name
+            res = requests.post(f"{API_URL}/command/pc-01?cmd={cmd}", headers=headers)
             data = res.json()
             result = data.get("message", "Erreur API")
         except:

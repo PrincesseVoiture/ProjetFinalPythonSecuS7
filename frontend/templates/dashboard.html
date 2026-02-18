@@ -1,21 +1,115 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="box">
-    <h2>Tableau de bord des agents</h2>
 
-    {% if agents %}
-        <ul>
-            {% for agent in agents %}
-                <li>
-                    <b>{{ agent.hostname }}</b> —
-                    CPU: {{ agent.cpu }}% —
-                    RAM: {{ agent.ram }}%
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>Aucun agent connecté.</p>
-    {% endif %}
+<div class="container">
+
+    <!-- Graphique CPU -->
+    <div class="box chart-box">
+        <h2>Évolution CPU des agents</h2>
+        <canvas id="cpuChart"></canvas>
+    </div>
+
+    <!-- Graphique RAM -->
+    <div class="box chart-box">
+        <h2>Évolution RAM des agents</h2>
+        <canvas id="ramChart"></canvas>
+    </div>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const token = "{{ session['token'] }}";
+const agents = {{ agents | tojson }};
+
+// labels pour les graphiques (datage/heure)
+const labels = [];
+
+// historique du cpu et ram vide
+const cpuHistory = {};
+const ramHistory = {};
+
+// recup^ du CPU
+const cpuDatasets = agents.map(agent => {
+    cpuHistory[agent.id] = [];
+    return {
+        label: agent.hostname || agent.id,
+        data: cpuHistory[agent.id],
+        fill: false,
+        tension: 0.3
+    };
+});
+
+// recup de la RAM
+const ramDatasets = agents.map(agent => {
+    ramHistory[agent.id] = [];
+    return {
+        label: agent.hostname || agent.id,
+        data: ramHistory[agent.id],
+        fill: false,
+        borderColor: 'orange',
+        tension: 0.3
+    };
+});
+
+// Config Chart CPU
+const cpuCtx = document.getElementById("cpuChart").getContext("2d");
+const cpuChart = new Chart(cpuCtx, {
+    type: "line",
+    data: { labels: labels, datasets: cpuDatasets },
+    options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, max: 100 } }
+    }
+});
+
+// Config Chart RAM
+const ramCtx = document.getElementById("ramChart").getContext("2d");
+const ramChart = new Chart(ramCtx, {
+    type: "line",
+    data: { labels: labels, datasets: ramDatasets },
+    options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true, max: 100 } }
+    }
+});
+
+// Fetch (flemme d'ajax)
+async function updateChart() {
+    try {
+        const res = await fetch("http://127.0.0.1:5000/agents", {
+            headers: { "Authorization": "Bearer " + token }
+        });
+        const newAgents = await res.json();
+
+        const now = new Date().toLocaleTimeString();
+        labels.push(now);
+        if (labels.length > 10) labels.shift();
+
+        newAgents.forEach(agent => {
+            if (!(agent.id in cpuHistory)) return;
+
+            // CPU
+            cpuHistory[agent.id].push(agent.cpu);
+            if (cpuHistory[agent.id].length > 20) cpuHistory[agent.id].shift();
+
+            // RAM
+            ramHistory[agent.id].push(agent.ram);  
+            if (ramHistory[agent.id].length > 20) ramHistory[agent.id].shift();
+        });
+
+        cpuChart.update();
+        ramChart.update();
+
+    } catch (err) {
+        console.error("Erreur lors de la récupération des agents :", err);
+    }
+}
+
+// Actualisation toutes les 2 secondes
+setInterval(updateChart, 2000);
+
+</script>
+
 {% endblock %}
