@@ -1,22 +1,29 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="box">
-    <h2>Terminal badass</h2>
+    <h2>Terminal multi-OS</h2>
 
     <form method="POST" id="terminal-form">
-        <input type="text" name="command" placeholder="Commande (ex: ls)" required>
+        <select name="agent_id" required>
+            {% for agent in agents %}
+            <option value="{{ agent.hostname }}" {% if agent.hostname == selected_agent_id %}selected{% endif %}>
+                {{ agent.hostname }}
+            </option>
+            {% endfor %}
+        </select>
+        <input type="text" name="command" placeholder="Commande (ex: ls / dir / echo hello)" required>
         <button type="submit">Envoyer</button>
     </form>
 
-    <h3>Résultat :</h3>
-    <pre>{{ output }}</pre>
+    <h3>Historique :</h3>
+    <pre style="background:#111;color:#0f0;padding:10px;border-radius:5px;">{{ output }}</pre>
 </div>
 
 <script>
 const input = document.querySelector('input[name="command"]');
-input.focus(); 
+input.focus();
 
-// soumission avec Enter
+// Soumission avec Enter
 input.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
@@ -24,7 +31,7 @@ input.addEventListener('keypress', function(e) {
     }
 });
 
-// focus automatique après soumission
+// Focus automatique après soumission
 const form = document.getElementById('terminal-form');
 form.addEventListener('submit', () => {
     setTimeout(() => input.focus(), 100);

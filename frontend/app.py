@@ -41,7 +41,6 @@ def dashboard():
         headers = {"Authorization": f"Bearer {session['token']}"}
         res = requests.get(f"{API_URL}/agents", headers=headers)
         agents = res.json()
-        print(agents)  
     except Exception as e:
         print(e)
         agents = []
@@ -54,25 +53,45 @@ def terminal():
     if "user" not in session or "token" not in session:
         return redirect("/login")
 
+    # liste des agents depuis l'API
+    try:
+        headers = {"Authorization": f"Bearer {session['token']}"}
+        res = requests.get(f"{API_URL}/agents", headers=headers)
+        agents = res.json()  #  recup id agent 
+    except:
+        agents = []
+
     if "history" not in session:
         session["history"] = ["Bienvenue dans votre terminal Flask."]
+    selected_agent_id = None
 
     if request.method == "POST":
         cmd = request.form["command"]
-        try:
-            headers = {"Authorization": f"Bearer {session['token']}"}
-            res = requests.post(f"{API_URL}/command/pc-01?cmd={cmd}", headers=headers)
-            data = res.json()
-            result = data.get("message", "Erreur API")
-        except:
-            result = "Impossible de joindre l'API"
+        selected_agent_id = request.form.get("agent_id", agents[0]["hostname"] if agents else None)
 
-        # Ajouter la commande + sortie à l'historique
-        session["history"].append(f"$ {cmd}\n{result}")
+        if selected_agent_id:
+            try:
+                res = requests.post(
+                    f"{API_URL}/agent/command",
+                    headers=headers,
+                    json={"agent_id": selected_agent_id, "command": cmd}
+                )
+                data = res.json()
+                result = f"Commande envoyée à {selected_agent_id} (id: {data.get('id')})"
+            except:
+                result = f"Impossible de joindre l'API pour {selected_agent_id}"
+        else:
+            result = "Aucun agent disponible"
+
+        session["history"].append(f"[{selected_agent_id}] $ {cmd}\n{result}")
         session["history"] = session["history"][-15:]
+    else:
+        # Si GET, on garde le1er agent par défaut
+        selected_agent_id = agents[0]["hostname"] if agents else None
+
 
     output = "\n".join(session["history"])
-    return render_template("terminal.html", output=output, title="Terminal")
+    return render_template("terminal.html", output=output, agents=agents, selected_agent_id=selected_agent_id, title="Terminal")
 
 @app.route("/logout")
 def logout():
