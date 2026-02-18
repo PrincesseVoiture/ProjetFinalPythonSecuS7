@@ -132,13 +132,12 @@ def submit_command_result():
 
     return jsonify({"status": "result saved"})
 
-# TODO add a function to send command result from command id if GET received
-
 @app.route("/agent/result", methods=["GET"])
 def get_result():
 
     command_id = request.json["command_id"]
 
+    # ICI PROBLEME
     rows = db.run_query(
         "SELECT * FROM commands WHERE id = ?",
         (command_id,),
