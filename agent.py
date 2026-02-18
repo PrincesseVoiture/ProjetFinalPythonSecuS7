@@ -1,6 +1,7 @@
 import requests, time, subprocess
 import psutil
 
+
 API_IP = "127.0.0.1"
 API_PORT = "5000"
 API_URL = f"http://{API_IP}:{API_PORT}"
@@ -19,18 +20,26 @@ while True:
     try:
         # envoi stats
         requests.post(
-            f"{API_URL}/agent/data",
+            f"{API_URL}/fromagent/data",
             headers=HEADERS,
-            json={"agent_id": AGENT_ID, "cpu": psutil.cpu_percent(), "ram": psutil.virtual_memory().percent}
+            json={
+                "agent_id": AGENT_ID,
+                "cpu": psutil.cpu_percent(),
+                "ram": psutil.virtual_memory().percent
+            }
         )
 
-        # récupération commande
-        response = requests.get(f"{API_URL}/agent/command/{AGENT_ID}", headers=HEADERS).json()
+        response = requests.get(
+            f"{API_URL}/fromagent/getcommand/{AGENT_ID}",
+            headers=HEADERS
+        ).json()
 
         if response["command"]:
-            returncode, stdout = simple_command(response["command"])
+            print(f"command is {response["command"]}")
+            _, output = simple_command(response["command"])
+
             requests.post(
-                f"{API_URL}/agent/result",
+                f"{API_URL}/fromagent/result",
                 headers=HEADERS,
                 json={"command_id": response["id"], "output": {"stdout": stdout, "returncode": returncode}}
             )
