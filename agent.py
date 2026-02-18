@@ -12,7 +12,7 @@ HEADERS = {"Authorization": f"Bearer {TOKEN}"}
 
 def simple_command(command: str):
     """Exécute une commande cross-platform et retourne (returncode, stdout)."""
-    result = subprocess.run(command, capture_output=True, text=True, shell=True)
+    result = subprocess.run(command.split(), capture_output=True, text=True, shell=True)
     stdout_clean = (result.stdout + result.stderr).replace('\r\n', '\n')
     return result.returncode, stdout_clean
 
