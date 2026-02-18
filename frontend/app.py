@@ -73,7 +73,7 @@ def terminal():
         cmd = request.form["command"]
         try:
             headers = {"Authorization": f"Bearer {session['token']}"}
-            res = requests.post(f"{API_URL}/command/pc-01?cmd={cmd}", headers=headers)
+            res = requests.post(f"{API_URL}/agent/command", headers=headers, json={"agent_id": "007", "command" : cmd}) # TODO replace hardcoded 007 with the right computer's name
             data = res.json()
             result = data.get("message", "Erreur API")
         except:

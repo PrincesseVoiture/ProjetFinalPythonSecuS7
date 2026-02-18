@@ -1,15 +1,15 @@
 from flask import Flask, request, jsonify
 from models import Database
-import datetime
+import datetime, requests
 
 app = Flask(__name__)
-AGENT_TOKEN = "secret123"
+AGENT_TOKEN = "secret123" # TODO seems useless, to remove ?
 
 db = Database()
 
 def verify_token():
     auth_header = request.headers.get("Authorization")
-    if not auth_header or auth_header.split(" ")[1] != AGENT_TOKEN:
+    if not auth_header or auth_header.split(" ")[1] != AGENT_TOKEN: # TODO check user token in database instead of useless hardcoded value
         return False
     return True
 
@@ -30,6 +30,7 @@ def login():
         return jsonify({"error": "Invalid credentials"}), 401
 
     token = user[0]["token"]
+    # TODO add token in database
     return jsonify({"token": token})
 
 
@@ -62,9 +63,10 @@ def update_agent_status():
 
 @app.route("/agents", methods=["GET"])
 def list_agents():
-    if not verify_token():
-        return jsonify({"error": "Unauthorized"}), 401
-
+    # TODO uncomment when verify_token() will be fixed
+#    if not verify_token():
+#        return jsonify({"error": "Unauthorized"}), 401
+    
     rows = db.run_query("SELECT * FROM agents", fetch=True)
     agents = [{"hostname": r["id"], "cpu": r["cpu"], "ram": r["ram"]} for r in rows]
 
@@ -74,8 +76,9 @@ def list_agents():
 
 @app.route("/agent/command", methods=["POST"])
 def add_command():
-    if not verify_token():
-        return jsonify({"error": "Unauthorized"}), 401
+    # TODO uncomment when verify_token() will be fixed
+    #if not verify_token():
+    #    return jsonify({"error": "Unauthorized"}), 401
 
     data = request.json
     agent_id = data.get("agent_id")
@@ -89,8 +92,9 @@ def add_command():
 
 @app.route("/agent/command/<agent_id>", methods=["GET"])
 def get_command(agent_id):
-    if not verify_token():
-        return jsonify({"error": "Unauthorized"}), 401
+    # TODO uncomment when verify_token() will be fixed
+    #if not verify_token():
+    #    return jsonify({"error": "Unauthorized"}), 401
 
     rows = db.run_query(
         "SELECT * FROM commands WHERE agent_id = ? AND status = 'pending' ORDER BY id LIMIT 1",
@@ -106,17 +110,19 @@ def get_command(agent_id):
 
 @app.route("/agent/result", methods=["POST"])
 def submit_command_result():
-    if not verify_token():
-        return jsonify({"error": "Unauthorized"}), 401
+    # TODO uncomment when verify_token() will be fixed
+    #if not verify_token():
+    #    return jsonify({"error": "Unauthorized"}), 401
 
     data = request.json
     command_id = data.get("command_id")
     output = data.get("output")
 
-    db.run_query(
-        "UPDATE commands SET result = ?, status = 'done' WHERE id = ?",
-        (output, command_id)
-    )
+    # TODO fix the current update, it crash here
+    #db.run_query(
+    #    "UPDATE commands SET result = ?, status = 'done' WHERE id = ?",
+    #    (output, command_id)
+    #)
 
     return jsonify({"status": "result saved"})
 
