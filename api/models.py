@@ -1,7 +1,7 @@
 import sqlite3
 import secrets
 
-DB_FILE = "database.db"
+DB_FILE = "database/database.db"
 
 class Database():
     def __init__(self) -> None:

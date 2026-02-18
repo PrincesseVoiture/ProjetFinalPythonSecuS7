@@ -6,7 +6,7 @@ services:
     ports:
       - 5000:5000
     volumes:
-      - ./api/database.db:/app/database.db
+      - ./database:/app/database
     restart: unless-stopped
   frontend:
     build: ./frontend
