@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, redirect, session
 import requests, time
+import os
 
-API_URL= "http://127.0.0.1:5000"
+API_URL = os.environ.get("API_URL", "http://api:5000")
 
 app = Flask(__name__)
 app.secret_key = "IPSSI C COOL" 
