@@ -155,8 +155,6 @@ def get_result():
         fetch=True
     )
 
-    print(f"{"true\n"*10}commandid is {command_id}, row: {rows[0]["result"]}")
-
     if rows and rows[0]["result"] is not None:
         return jsonify({"result": rows[0]["result"]})
 

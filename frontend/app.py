@@ -81,13 +81,10 @@ def terminal():
 
                 command_id = data.get('id')
                 result = f"Commande envoyée à {selected_agent_id} (id: {command_id})"
-                print(result)
 
                 for _ in range(10):
                     res = requests.get(f"{API_URL}/agent/result", json={"command_id": command_id}).json()
                     result = res["result"]
-
-                    print(f"result is {res}")
 
                     #if result != "Aucun résultat disponible":
                     #    break
