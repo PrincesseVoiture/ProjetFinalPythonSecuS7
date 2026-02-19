@@ -98,7 +98,7 @@ def terminal():
         else:
             result = "Aucun agent disponible"
 
-        session["history"].append(f"[{selected_agent_id}] $ {cmd}\n{result}")
+        session["history"].append(f"[{selected_agent_id}] | {command_id} ID $ {cmd}\n{result}")
         session["history"] = session["history"][-15:]
     else:
         # Si GET, on garde le1er agent par défaut
