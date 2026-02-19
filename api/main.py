@@ -6,19 +6,16 @@ from flask_cors import CORS
 app = Flask(__name__)
 
 CORS(app,
-     origins=[
-         "http://127.0.0.1:5001",
-         "http://localhost:5001"
-     ],
+     origins=["http://0.0.0.0:5001"],
      supports_credentials=True)
 
-AGENT_TOKEN = "secret123" # TODO seems useless, to remove ?
+AGENT_TOKEN = "secret123"
 
 db = Database()
 
 def verify_agent_token():
     auth_header = request.headers.get("Authorization")
-    if not auth_header or auth_header.split(" ")[1] != AGENT_TOKEN: # TODO check user token in database instead of useless hardcoded value
+    if not auth_header or auth_header.split(" ")[1] != AGENT_TOKEN: 
         return False
     return True
 
