@@ -20,6 +20,21 @@ def verify_agent_token():
         return False
     return True
 
+def verify_user_token():
+    auth_header = request.headers.get("Authorization")
+    if not auth_header: 
+        return False
+
+    token = auth_header.split(" ")[1]
+    username = auth_header.split(" ")[2]
+
+    row = db.run_query("SELECT * FROM users WHERE token = ? and username = ? LIMIT 1", (token, username,), fetch=True)
+
+    if not row and row[0]["id"] is None:
+        return False
+
+    return True
+
 
 @app.route("/auth/login", methods=["POST"])
 def login():
@@ -37,7 +52,6 @@ def login():
         return jsonify({"error": "Invalid credentials"}), 401
 
     token = user[0]["token"]
-    # TODO add token in database
     return jsonify({"token": token})
 
 
@@ -70,9 +84,8 @@ def update_agent_status():
 
 @app.route("/agents", methods=["GET"])
 def list_agents():
-    # TODO uncomment when verify_agent_token() will be fixed
-    #if not verify_agent_token():
-    #   return jsonify({"error": "Unauthorized"}), 401
+    if not verify_user_token():
+       return jsonify({"error": "Unauthorized"}), 401
     
     rows = db.run_query("SELECT * FROM agents", fetch=True)
     agents = [{"hostname": r["id"], "cpu": r["cpu"], "ram": r["ram"]} for r in rows]
@@ -83,9 +96,8 @@ def list_agents():
 
 @app.route("/agent/command", methods=["POST"])
 def add_command():
-    # TODO uncomment when verify_agent_token() will be fixed
-    #if not verify_agent_token():
-    #    return jsonify({"error": "Unauthorized"}), 401
+    if not verify_user_token():
+        return jsonify({"error": "Unauthorized"}), 401
 
     data = request.json
     agent_id = data.get("agent_id")
@@ -132,6 +144,8 @@ def submit_command_result():
 
 @app.route("/agent/result", methods=["GET"])
 def get_result():
+    if not verify_agent_token():
+        return jsonify({"error": "Unauthorized"}), 401
 
     command_id = request.json["command_id"]
 

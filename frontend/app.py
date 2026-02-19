@@ -39,7 +39,7 @@ def dashboard():
         return redirect("/login")
 
     try:
-        headers = {"Authorization": f"Bearer {session['token']}"}
+        headers = {"Authorization": f"Bearer {session['token']} {session["user"]}"}
         res = requests.get(f"{API_URL}/agents", headers=headers)
         agents = res.json()
     except Exception as e:
@@ -56,7 +56,7 @@ def terminal():
 
     # liste des agents depuis l'API
     try:
-        headers = {"Authorization": f"Bearer {session['token']}"}
+        headers = {"Authorization": f"Bearer {session['token']} {session["user"]}"}
         res = requests.get(f"{API_URL}/agents", headers=headers)
         agents = res.json()  #  recup id agent 
     except:
