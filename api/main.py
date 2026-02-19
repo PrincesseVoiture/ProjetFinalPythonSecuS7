@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from models import Database
 import datetime
 from flask_cors import CORS
+import hashlib
 
 app = Flask(__name__)
 
@@ -25,11 +26,11 @@ def login():
     """Vérifie login/password et retourne un token."""
     data = request.json
     username = data.get("username")
-    password = data.get("password")
+    password = bytes(data.get("password"), encoding="utf-8")
 
     user = db.run_query(
         "SELECT * FROM users WHERE username = ? AND password = ?",
-        (username, password),
+        (username, hashlib.sha256(password).hexdigest()),
         fetch=True
     )
     if not user:

@@ -1,5 +1,6 @@
 import sqlite3
 import secrets
+import hashlib
 
 DB_FILE = "database/database.db"
 
@@ -45,7 +46,7 @@ class Database():
             token = secrets.token_hex(16)  
             cursor.execute(
                 "INSERT INTO users (username, password, token) VALUES (?, ?, ?)",
-                ("admin", "admin", token)
+                ("admin", hashlib.sha256(b"admin").hexdigest(), token)
             )
 
         cursor.execute("SELECT * FROM users WHERE username = 'Berzylyss'")
@@ -53,7 +54,7 @@ class Database():
             token = secrets.token_hex(16)
             cursor.execute(
                 "INSERT INTO users (username, password, token) VALUES (?, ?, ?)",
-                ("Berzylyss", "123456", token)
+                ("Berzylyss", hashlib.sha256(b"123456").hexdigest(), token)
             )
 
         conn.commit()
