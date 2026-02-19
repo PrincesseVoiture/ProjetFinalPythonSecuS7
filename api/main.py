@@ -16,8 +16,12 @@ db = Database()
 
 def verify_agent_token():
     auth_header = request.headers.get("Authorization")
+    #print(auth_header)
+    #print("agent token verif ", end="")
     if not auth_header or auth_header.split(" ")[1] != AGENT_TOKEN: 
+        #print("false")
         return False
+    #print("true")
     return True
 
 def verify_user_token():
@@ -25,7 +29,8 @@ def verify_user_token():
     if not auth_header: 
         return False
     
-    print(f"{auth_header}\n")
+    #print(f"{auth_header}\n")
+    #print("user token verif ", end="")
 
     token = auth_header.split(" ")[1]
     username = auth_header.split(" ")[2]
@@ -33,12 +38,10 @@ def verify_user_token():
     row = db.run_query("SELECT * FROM users WHERE token = ? and username = ? LIMIT 1", (token, username,), fetch=True)
 
     if not row or row[0]["id"] is None:
-        print(f"{"false\n"*10} id is {row[0]["id"] if row else "is None"}")
-        #print(f"{auth_header}\n{token}\n{username}")
+        #print(f"false\nid is {row[0]["id"] if row else "is None"}")
         return False
     
-    print(f"{"true\n"*10} id is {row[0]["id"]}")
-    #print(f"{auth_header}\n{token}\n{username}")
+    #print(f"true\nid is {row[0]["id"]}")
     return True
 
 
@@ -108,8 +111,6 @@ def list_agents():
 
     return jsonify(agents)
 
-
-
 @app.route("/agent/command", methods=["POST"])
 def add_command():
     if not verify_user_token():
@@ -120,7 +121,9 @@ def add_command():
     command = data.get("command")
 
     db.run_query("INSERT INTO commands (agent_id, command) VALUES (?, ?)", (agent_id, command,), fetch=True)
-    cmd_id = db.run_query("SELECT id FROM commands WHERE agent_id = ? ORDER BY id DESC LIMIT 1", (agent_id,), fetch=True)[0]["id"]
+    result = db.run_query("SELECT id FROM commands WHERE agent_id = ? ORDER BY id DESC LIMIT 1", (agent_id,), fetch=True)
+    
+    cmd_id = result[0]["id"]
 
     return jsonify({"status": "command added", "id": cmd_id})
 
@@ -160,9 +163,9 @@ def submit_command_result():
 
 @app.route("/agent/result", methods=["GET"])
 def get_result():
-    if not verify_agent_token():
+    if not verify_user_token():
         return jsonify({"error": "Unauthorized"}), 401
-
+    
     command_id = request.json["command_id"]
 
     rows = db.run_query(

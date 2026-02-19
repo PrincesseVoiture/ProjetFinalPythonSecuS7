@@ -43,7 +43,6 @@ def dashboard():
 
     try:
         headers = {"Authorization": f"Bearer {session["token"]} {session["user"]}"}
-        print(f"headers from /dashboard is {headers}")
         res = requests.get(f"{API_URL}/agents", headers=headers)
         agents = res.json()
     except Exception as e:
@@ -84,22 +83,20 @@ def terminal():
                 data = res.json()
 
                 command_id = data.get('id')
-                result = f"Commande envoyée à {selected_agent_id} (id: {command_id})"
 
                 for _ in range(10):
-                    res = requests.get(f"{API_URL}/agent/result", json={"command_id": command_id}).json()
+                    res = requests.get(f"{API_URL}/agent/result", json={"command_id": command_id}, headers=headers).json()
                     result = res["result"]
 
-                    #if result != "Aucun résultat disponible":
-                    #    break
+                    if result != "Aucun résultat disponible":
+                        break
 
                     time.sleep(0.2)
 
-            except:
+            except requests.exceptions.ConnectionError:
                 result = f"Impossible de joindre l'API pour {selected_agent_id}"
         else:
             result = "Aucun agent disponible"
-
 
         session["history"].append(f"[{selected_agent_id}] $ {cmd}\n{result}")
         session["history"] = session["history"][-15:]

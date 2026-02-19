@@ -57,7 +57,7 @@ class Database():
         conn.commit()
         conn.close()
 
-    def run_query(self, query: str, params=(), fetch: bool = False):
+    def run_query(self, query: str, params: tuple[str | None, ...] = (), fetch: bool = False):
         """Exécute une requête SQL et retourne éventuellement les résultats."""
         conn = sqlite3.connect(DB_FILE)
         conn.row_factory = sqlite3.Row
