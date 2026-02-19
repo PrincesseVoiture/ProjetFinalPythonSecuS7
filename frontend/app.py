@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, session
 import requests, time
-import os
+import os, secrets
 
 API_URL = os.environ.get("API_URL", "http://api:5000")
 
@@ -11,6 +11,7 @@ app.secret_key = "IPSSI C COOL"
 def home():
     return redirect("/login")
 
+# Route to frontend /login
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -23,7 +24,8 @@ def login():
                                      json={"username": username, "password": password})
             if response.status_code == 200:
                 session["user"] = username
-                session["token"] = response.json().get("token")
+                session["token"] = secrets.token_hex(16)  
+                requests.post(f"{API_URL}/auth/token", json={"username": username, "token": session["token"]})
                 return redirect("/dashboard")
             else:
                 error = "Login incorrect"
@@ -33,22 +35,24 @@ def login():
 
     return render_template("login.html")
 
+# Route to frontend /dashboard
 @app.route("/dashboard")
 def dashboard():
     if "user" not in session or "token" not in session:
         return redirect("/login")
 
     try:
-        headers = {"Authorization": f"Bearer {session['token']} {session["user"]}"}
+        headers = {"Authorization": f"Bearer {session["token"]} {session["user"]}"}
+        print(f"headers from /dashboard is {headers}")
         res = requests.get(f"{API_URL}/agents", headers=headers)
         agents = res.json()
     except Exception as e:
         print(e)
         agents = []
 
-    return render_template("dashboard.html", agents=agents, title="Dashboard")
+    return render_template("dashboard.html", agents=agents, API_URL=API_URL, title="Dashboard")
 
-
+# Route to frontend /terminal
 @app.route("/terminal", methods=["GET", "POST"])
 def terminal():
     if "user" not in session or "token" not in session:
@@ -56,7 +60,7 @@ def terminal():
 
     # liste des agents depuis l'API
     try:
-        headers = {"Authorization": f"Bearer {session['token']} {session["user"]}"}
+        headers = {"Authorization": f"Bearer {session["token"]} {session["user"]}"}
         res = requests.get(f"{API_URL}/agents", headers=headers)
         agents = res.json()  #  recup id agent 
     except:
@@ -105,7 +109,7 @@ def terminal():
 
 
     output = "\n".join(session["history"])
-    return render_template("terminal.html", output=output, agents=agents, selected_agent_id=selected_agent_id, title="Terminal")
+    return render_template("terminal.html", API_URL=API_URL, output=output, agents=agents, selected_agent_id=selected_agent_id, title="Terminal")
 
 @app.route("/logout")
 def logout():

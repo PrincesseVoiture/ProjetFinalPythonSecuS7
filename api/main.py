@@ -7,7 +7,7 @@ import hashlib
 app = Flask(__name__)
 
 CORS(app,
-     origins=["http://0.0.0.0:5001"],
+     origins=["http://127.0.0.1:5001", "http://localhost:5001"],
      supports_credentials=True)
 
 AGENT_TOKEN = "secret123"
@@ -24,15 +24,21 @@ def verify_user_token():
     auth_header = request.headers.get("Authorization")
     if not auth_header: 
         return False
+    
+    print(f"{auth_header}\n")
 
     token = auth_header.split(" ")[1]
     username = auth_header.split(" ")[2]
 
     row = db.run_query("SELECT * FROM users WHERE token = ? and username = ? LIMIT 1", (token, username,), fetch=True)
 
-    if not row and row[0]["id"] is None:
+    if not row or row[0]["id"] is None:
+        print(f"{"false\n"*10} id is {row[0]["id"] if row else "is None"}")
+        #print(f"{auth_header}\n{token}\n{username}")
         return False
-
+    
+    print(f"{"true\n"*10} id is {row[0]["id"]}")
+    #print(f"{auth_header}\n{token}\n{username}")
     return True
 
 
@@ -51,9 +57,19 @@ def login():
     if not user:
         return jsonify({"error": "Invalid credentials"}), 401
 
-    token = user[0]["token"]
-    return jsonify({"token": token})
+    #token = user[0]["token"]
+    return jsonify({"result": "success"})
 
+@app.route("/auth/token", methods=["POST"])
+def set_token():
+    """Ecrit le token chiffre dans la db"""
+    data = request.json
+    username = data.get("username")
+    token = data.get("token")
+
+    db.run_query("UPDATE users SET token = ? WHERE username = ?", (token, username,))
+
+    return jsonify({"result": "success"})
 
 @app.route("/fromagent/data", methods=["POST"])
 def update_agent_status():
@@ -102,7 +118,7 @@ def add_command():
     data = request.json
     agent_id = data.get("agent_id")
     command = data.get("command")
-    
+
     db.run_query("INSERT INTO commands (agent_id, command) VALUES (?, ?)", (agent_id, command,), fetch=True)
     cmd_id = db.run_query("SELECT id FROM commands WHERE agent_id = ? ORDER BY id DESC LIMIT 1", (agent_id,), fetch=True)[0]["id"]
 

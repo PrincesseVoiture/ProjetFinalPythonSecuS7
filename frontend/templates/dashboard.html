@@ -21,7 +21,9 @@
 
 <script>
 const token = "{{ session['token'] }}";
+const username = "{{ session['user'] }}";
 const agents = {{ agents | tojson }};
+const API_URL = "{{ API_URL }}";
 
 // labels pour les graphiques (datage/heure)
 const labels = [];
@@ -79,7 +81,7 @@ const ramChart = new Chart(ramCtx, {
 async function updateChart() {
     try {
         const res = await fetch("http://127.0.0.1:5000/agents", {
-            headers: { "Authorization": "Bearer " + token }
+            headers: { "Authorization": "Bearer " + token + " " + username }
         });
         const newAgents = await res.json();
 
